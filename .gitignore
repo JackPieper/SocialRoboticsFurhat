@@ -1,3 +1,9 @@
+# Large files (Like the models)
+Models/emotion_lstm_best.pth
+Models/haarcascade_frontalface_default.xml
+Models/model_file.h5
+Models/WIN_20251120_15_05_32_Pro.mp4
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
