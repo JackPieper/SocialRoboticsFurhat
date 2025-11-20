@@ -4,7 +4,7 @@ from keras.models import load_model
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from get_features import extract_ser_features
+from Models.get_features import extract_ser_features
 from moviepy import VideoFileClip
 import json
 import matplotlib.pyplot as plt
@@ -16,16 +16,16 @@ SEGMENT_DURATION = 5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-with open("class2idx.json", "r") as f:
+with open("Models/class2idx.json", "r") as f:
     class2idx = json.load(f)
 idx2class = {v: k for k, v in class2idx.items()}
 
 def detect_emotions_from_video(video_path):
-    model = load_model('model_file.h5')
+    model = load_model('Models/model_file.h5')
 
     video = cv2.VideoCapture(video_path)
 
-    faceDetect = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    faceDetect = cv2.CascadeClassifier('Models/haarcascade_frontalface_default.xml')
     labels_dict = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Neutral', 5: 'Sad', 6: 'Surprise'}
 
     emotion_sums = np.zeros(len(labels_dict))
@@ -195,7 +195,7 @@ def load_ser_model(model_path, N_MFCC_dim, num_classes):
     model.eval()
     return model
 
-model_path = "emotion_lstm_best.pth"
+model_path = "Models/emotion_lstm_best.pth"
 N_MFCC_dim = 122
 num_classes = len(class2idx)
 model = load_ser_model(model_path, N_MFCC_dim, num_classes)
@@ -265,12 +265,12 @@ def load_audio_with_pyav(video_path):
     return segment
 
 
-if __name__ == "__main__":
-    vediopath = '../Video_Song_Actor_01/Actor_01/01-02-01-01-01-01-01.mp4'
-    detectedEmotions = detect_emotions_from_video(vediopath)
-    print(detectedEmotions)
-
-    waveform = load_audio_with_pyav(vediopath)# audio met SAMPLE_RATE van 16000 en schape van [1,SAMPLE_RATE*SEGMENT_DURATION]
-
-    result = predict(waveform)
-    print(result)
+# if __name__ == "__main__":
+#     vediopath = '../Video_Song_Actor_01/Actor_01/01-02-01-01-01-01-01.mp4'
+#     detectedEmotions = detect_emotions_from_video(vediopath)
+#     print(detectedEmotions)
+#
+#     waveform = load_audio_with_pyav(vediopath)# audio met SAMPLE_RATE van 16000 en schape van [1,SAMPLE_RATE*SEGMENT_DURATION]
+#
+#     result = predict(waveform)
+#     print(result)
