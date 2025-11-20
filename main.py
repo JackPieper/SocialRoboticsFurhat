@@ -87,8 +87,8 @@ def emote(cam, foer):
         last5.append(getVid(cam))
         if len(last5) > 5:
             last5 = last5[-5:]
-        use = [frm for seg in last5 for frm in seg]
-        # emoton = detect_emotion(use) # Gooi nu use in het model voor resultaat
+        use = [frm for seg in last5 for frm in seg] # use is all frames of the last 5 seconds
+        # emoton = detect_emotion(use) # Now throw use into the model to get the resulting emotion
         # foer.set_face(expr=emotion)
 
 if __name__ == "__main__":
