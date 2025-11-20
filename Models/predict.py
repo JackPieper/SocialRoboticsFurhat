@@ -10,10 +10,15 @@ import json
 import matplotlib.pyplot as plt
 import av
 
+
 SAMPLE_RATE = 16000
 SEGMENT_DURATION = 5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
+with open("class2idx.json", "r") as f:
+    class2idx = json.load(f)
+idx2class = {v: k for k, v in class2idx.items()}
 
 def detect_emotions_from_video(video_path):
     model = load_model('model_file.h5')
@@ -190,9 +195,15 @@ def load_ser_model(model_path, N_MFCC_dim, num_classes):
     model.eval()
     return model
 
+model_path = "emotion_lstm_best.pth"
+N_MFCC_dim = 122
+num_classes = len(class2idx)
+model = load_ser_model(model_path, N_MFCC_dim, num_classes)
 
-def predict(model, feature_tensor, waveform_tensor, idx2class):
+def predict(waveform_tensor):
     model.eval()
+
+    feature_tensor = extract_ser_features(waveform_tensor)
 
     # 调整维度
     if waveform_tensor.dim() == 1:
@@ -227,7 +238,7 @@ def load_audio_with_pyav(video_path):
         frame_tensor = torch.tensor(frame.to_ndarray())
         frames.append(frame_tensor)
 
-    waveform = torch.cat(frames, dim=-1)  # Merge all frames
+    waveform = torch.cat(frames, dim=-1)  # 合并所有帧
 
     waveform = waveform.mean(dim=0, keepdim=True)
     seg_len = int(SAMPLE_RATE * SEGMENT_DURATION)
@@ -240,38 +251,26 @@ def load_audio_with_pyav(video_path):
     else:
         num_segments = total_len // seg_len
 
-        # Normaal 5 sec segmentation
+        # 正常5秒分段
         for s in range(num_segments):
             start = s * seg_len
             end = start + seg_len
             segment = waveform[:, start:end]
 
-        # Process the tail of the last less than 5 sec
+        # 处理最后不足5秒的尾巴
         remainder = total_len % seg_len
         if remainder > 0:
             segment = F.pad(waveform[:, -remainder:], (0, seg_len - remainder))
 
     return segment
 
-with open("class2idx.json", "r") as f:
-    class2idx = json.load(f)
-idx2class = {v: k for k, v in class2idx.items()}
-
-model_path = "emotion_lstm_best.pth"
-N_MFCC_dim = 122
-num_classes = len(class2idx)
-model = load_ser_model(model_path, N_MFCC_dim, num_classes)
-
 
 if __name__ == "__main__":
-    videopath = 'WIN_20251120_15_05_32_Pro.mp4'
-    detectedEmotions = detect_emotions_from_video(videopath)
+    vediopath = '../Video_Song_Actor_01/Actor_01/01-02-01-01-01-01-01.mp4'
+    detectedEmotions = detect_emotions_from_video(vediopath)
     print(detectedEmotions)
 
-    waveform = load_audio_with_pyav(videopath)# audio met SAMPLE_RATE van 16000 en shape van [1,SAMPLE_RATE*SEGMENT_DURATION]
-    feat = extract_ser_features(waveform) # exra input voor de model van de audio
+    waveform = load_audio_with_pyav(vediopath)# audio met SAMPLE_RATE van 16000 en schape van [1,SAMPLE_RATE*SEGMENT_DURATION]
 
-    result = predict(model, feat, waveform,idx2class)
+    result = predict(waveform)
     print(result)
-
-
