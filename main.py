@@ -1,25 +1,18 @@
 import ollama
 import torch
-from charset_normalizer import detect
 from furhat_remote_api import FurhatRemoteAPI
-from furhat_realtime_api import AsyncFurhatClient
-import furhat_realtime_api
 import cv2
 from datetime import datetime, timedelta
-from Models.get_features import extract_ser_features
-import os
 from keras.models import load_model
 import numpy as np
-from librosa.util import frame
 from Models import predict
-import asyncio
 import threading
 import json
-from Models.predict import load_audio_with_pyav, predict, load_ser_model
+from Models.predict import predict, load_ser_model
 import sounddevice as sd
 
-model = 'llama3.2:3b'
-ip = '127.0.0.1'
+model = 'llama3.2:3b' #nieuwe modellen kijken welke de meest passende antwoorden geven
+ip = ('localhost')
 
 messages = []
 flag = threading.Event()
@@ -32,40 +25,28 @@ N_MFCC_dim = 122
 num_classes = len(class2idx)
 sModel = load_ser_model(model_path, N_MFCC_dim, num_classes)
 
-def getResponse(prompt):
-    messages.append({"role": "system", "content": 'Give short responses, fit for imitating human converse. Do not give excessive explanations.'})
-    ollama.chat(model=model, messages=messages)
+def getResponse(prompt, instruct="Give short responses, fit for imitating human converse. Do not give excessive explanations. You will follow the conversation of the person in front of you and not steer the conversation as long as the other person has something interesting to say"):
+    messages.append({"role": "system", "content":instruct})
     messages.append({"role": "user", "content": prompt})
     rep = ollama.chat(model=model, messages=messages)
     print(rep["message"]["content"])
     return rep["message"]["content"]
 
-def getCurEmo(face, voice):
-    if face["probabilities"][face["final_emotion"]] +\
-       voice["probabilities"][face["final_emotion"]] <\
-       face["probabilities"][voice["final_emotion"]] +\
-       voice["probabilities"][voice["final_emotion"]]:
-        return face["final_emotion"]
-    else:
-        return voice["final_emotion"]
-
 def showEmotion(foer, emotion):
     print(emotion)
-    match emotion:
-        case "Angry":
-            foer.set_face(expr="angry")
-        case "Neutral":
-            foer.set_face(expr="neutral")
-        case "Happy":
-            foer.set_face(expr="happy")
-        case "Sad":
-            foer.set_face(expr="sad")
-        case "Surprise":
-            foer.set_face(expr="surprise")
-        case "Fear":
-            foer.set_face(expr="fear")
-        case "Disgust":
-            foer.set_face(expr="disgust")
+    match emotion.lower():
+        case "angry":
+            foer.gesture(name="ExpressAnger", async_req=True)
+        case "happy":
+            foer.gesture(name="BigSmile", async_req=True)
+        case "sad":
+            foer.gesture(name="ExpressSad", async_req=True)
+        case "surprise":
+            foer.gesture(name="Surprise", async_req=True)
+        case "fear":
+            foer.gesture(name="ExpressFear", async_req=True)
+        case "disgust":
+            foer.gesture(name="ExpressDisgust", async_req=True)
 
 def startCam():
     cam = cv2.VideoCapture(0)
@@ -78,87 +59,118 @@ def stopCam(cam):
     cam.release()
     cv2.destroyAllWindows()
 
-def getVid(cam):
-    cv2.namedWindow("Frame", cv2.WINDOW_NORMAL) #Starts the window early so it shows frames from the start
-    frames = []
+def getVid(cam, model):
+    cv2.namedWindow("Frame", cv2.WINDOW_NORMAL) #Starts the window early so it shows frames
+
+    detectedEmotions = []
+    faceDetect = cv2.CascadeClassifier('Models/haarcascade_frontalface_default.xml')
+    labels_dict = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Neutral', 5: 'Sad', 6: 'Surprise'}
+    emotion_sums = np.zeros(len(labels_dict))
+    frame_count = 0
+
     end_time = datetime.now() + timedelta(seconds=1)
     while datetime.now() < end_time:
         ret, frame = cam.read()
         if not ret:  # Check if frame retrieval was successful
             continue  # Skip the rest of the loop if frame retrieval fails
-        frames.append(frame)
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = faceDetect.detectMultiScale(gray, 1.3, 3)
+
+        for x, y, w, h in faces:
+            sub_face_img = gray[y:y + h, x:x + w]
+            resized = cv2.resize(sub_face_img, (48, 48))
+            normalize = resized / 255.0
+            reshaped = np.reshape(normalize, (1, 48, 48, 1))
+            result = model.predict(reshaped)
+            label = np.argmax(result, axis=1)[0]
+
+            emotion_sums += [a + b for a, b in zip(result[0], emotion_sums)]
+            frame_count += 1
+
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (50, 50, 255), 2)
+            cv2.putText(frame, labels_dict[label], (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+            detectedEmotions.append(labels_dict[label])
 
         cv2.imshow("Frame", frame)
         if cv2.waitKey(1) == ord('q'):
             break
+        avg_probabilities = emotion_sums / frame_count
 
-    return frames
+    return avg_probabilities
 
-def sEmote():
+def audRes():
     sec = 1
     rate = 16000
-    last5 = []
-    print("a")
-
-    # while not flag.is_set():
     audio = sd.rec(int(sec * rate),
                        samplerate=rate,
                        channels=1,
                        dtype='float32')
     sd.wait()
     floatArray = audio.flatten().tolist()
-    last5.append(floatArray)
-    if len(last5) > 5:
-        last5 = last5[-5:]
-    use = [frm for seg in last5 for frm in seg]
-    emotion = predict(torch.from_numpy(np.array(use, dtype=np.float32)))
-    showEmotion(foer, emotion)
+    emotion = predict(torch.from_numpy(np.array(floatArray, dtype=np.float32)))
+    return [emotion["probabilities"]["angry"], emotion["probabilities"]["disgust"], emotion["probabilities"]["fearful"], emotion["probabilities"]["happy"], emotion["probabilities"]["neutral"], emotion["probabilities"]["sad"], emotion["probabilities"]["surprised"]]
 
-def emote(cam, foer):
-    last5 = []
+def vidRes(cam, model):
+    if not cam.isOpened():
+        return
+    temp = getVid(cam, model)
+    return temp
+
+def getEmo(cam, foer):
+    model = load_model('Models/model_file.h5')
+    lastFrames = []
+    lastAudio = []
+    it = 0
     while not flag.is_set():
-        if not cam.isOpened():
-            return
-        last5.append(getVid(cam))
-        if len(last5) > 5:
-            last5 = last5[-5:]
-        elif len(last5) < 5:
-            for i in range(5):
-                last5.append(last5[-1])
-            last5 = last5[-5:]
-        use = [frm for seg in last5 for frm in seg] # use is all frames of the last 5 seconds
-        emotion = predict(use) # Now throw use into the model to get the resulting emotion
-        foer.set_face(expr=emotion)
+        print("iteration:", it)
+        it+=1
+        labels_dict = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Neutral', 5: 'Sad', 6: 'Surprise'}
+        lastFrames.append(vidRes(cam, model))
+        lastAudio.append(audRes())
+        lastFrames = format(lastFrames)
+        lastAudio = format(lastAudio)
+        resultaat = getAvg(lastAudio, lastFrames)
+        showEmotion(foer, labels_dict[np.argmax(resultaat)])
+
+def format(var):
+    if len(var) > 5:
+        var = var[-5:]
+    elif len(var) < 5:
+        for i in range(5-len(var)):
+            var.append(var[-1])
+    return var
+
+def getAvg(list1, list2):
+    new = []
+    for i in range(len(list1[0])):
+        a = 0
+        for j in range(len(list1)):
+            a += list1[j][i] + list2[j][i]
+        new.append(a)
+    return new
 
 if __name__ == "__main__":
     messages.append({"role": "system",
                      "content": 'Give short responses but not too short, fit for imitating human converse. \
                      Do not give excessive explanations.'})
     ollama.chat(model=model, messages=messages)
-    foer = FurhatRemoteAPI('127.0.0.1')
+    foer = FurhatRemoteAPI(ip)
     foer.set_voice(name='Matthew')
-    #set furhat's expression to sad
 
     foer.say(text='Hello, my name is furhat. How are you?', blocking=True)
     messages.append({"role":"assistant", "content":"Hello, my name is furhat. How are you?"})
     cam = startCam()
-    # t = threading.Thread(target=emote, args=(cam, foer), daemon=True)
-    # t.start()
-    # print('foer')
-    # t2 = threading.Thread(target=sEmote(), daemon=True)
-    # print('foer1')
-    # t2.start()
-    # print('foer2')
+    t = threading.Thread(target=getEmo, args=(cam, foer), daemon=True)
+    t.start()
 
+    print("voor while")
     while 1:
-        print('foer3')
         pmt = foer.listen()
         print(pmt)
-        if pmt.message.strip().lower() == 'end':
-            # t.join()
-            # t2.join()
+        if pmt.message.strip().lower() == 'and':
+            flag.set()
             break
         else:
             foer.say(text=getResponse(pmt.message.strip()), blocking=True)
-            sEmote()
     stopCam(cam)
