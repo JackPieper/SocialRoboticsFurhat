@@ -5,16 +5,20 @@ import cv2
 from datetime import datetime, timedelta
 from keras.models import load_model
 import numpy as np
+from librosa.effects import pitch_shift
+from numpy.ma.core import argmax
 from Models import predict
 import threading
 import json
 from Models.predict import predict, load_ser_model
 import sounddevice as sd
+from stories import story1, story2
+from util import getResponse
 
 model = 'llama3.2:3b' #nieuwe modellen kijken welke de meest passende antwoorden geven
 ip = ('localhost')
 
-messages = []
+msgs = []
 flag = threading.Event()
 
 with open("Models/class2idx.json", "r") as f:
@@ -25,15 +29,8 @@ N_MFCC_dim = 122
 num_classes = len(class2idx)
 sModel = load_ser_model(model_path, N_MFCC_dim, num_classes)
 
-def getResponse(prompt, instruct="Give short responses, fit for imitating human converse. Do not give excessive explanations. You will follow the conversation of the person in front of you and not steer the conversation as long as the other person has something interesting to say"):
-    messages.append({"role": "system", "content":instruct})
-    messages.append({"role": "user", "content": prompt})
-    rep = ollama.chat(model=model, messages=messages)
-    print(rep["message"]["content"])
-    return rep["message"]["content"]
-
 def showEmotion(foer, emotion):
-    print(emotion)
+    print("EMOTION FOUND:", emotion)
     match emotion.lower():
         case "angry":
             foer.gesture(name="ExpressAnger", async_req=True)
@@ -106,6 +103,8 @@ def audRes():
                        samplerate=rate,
                        channels=1,
                        dtype='float32')
+    if np.max(np.abs(audio)) < 0.05:
+        return [0, 0, 0, 0, 0, 0, 0]
     sd.wait()
     floatArray = audio.flatten().tolist()
     emotion = predict(torch.from_numpy(np.array(floatArray, dtype=np.float32)))
@@ -122,16 +121,18 @@ def getEmo(cam, foer):
     lastFrames = []
     lastAudio = []
     it = 0
+    labels_dict = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Neutral', 5: 'Sad', 6: 'Surprise'}
     while not flag.is_set():
         print("iteration:", it)
         it+=1
-        labels_dict = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Neutral', 5: 'Sad', 6: 'Surprise'}
         lastFrames.append(vidRes(cam, model))
         lastAudio.append(audRes())
         lastFrames = format(lastFrames)
         lastAudio = format(lastAudio)
+        print("a:", labels_dict[np.argmax(lastAudio[0])], "v:", labels_dict[np.argmax(lastFrames[0])])
         resultaat = getAvg(lastAudio, lastFrames)
-        showEmotion(foer, labels_dict[np.argmax(resultaat)])
+        if len(np.where(resultaat == np.max(resultaat))[0]) == 1:
+            showEmotion(foer, labels_dict[argmax(resultaat)])
 
 def format(var):
     if len(var) > 5:
@@ -151,18 +152,21 @@ def getAvg(list1, list2):
     return new
 
 if __name__ == "__main__":
-    messages.append({"role": "system",
-                     "content": 'Give short responses but not too short, fit for imitating human converse. \
-                     Do not give excessive explanations.'})
-    ollama.chat(model=model, messages=messages)
     foer = FurhatRemoteAPI(ip)
     foer.set_voice(name='Matthew')
 
     foer.say(text='Hello, my name is furhat. How are you?', blocking=True)
-    messages.append({"role":"assistant", "content":"Hello, my name is furhat. How are you?"})
+    msgs.append({"role":"assistant", "content":"Hello, my name is furhat. How are you?"})
+    com = input("Respond to furhat:\n1: Start story 1\n2: start story 2\nor give a message to continue chatting.\n")
+
     cam = startCam()
     t = threading.Thread(target=getEmo, args=(cam, foer), daemon=True)
     t.start()
+    match com:
+        case "1":
+            story1(foer)
+        case "2":
+            story2(foer)
 
     print("voor while")
     while 1:
@@ -172,5 +176,6 @@ if __name__ == "__main__":
             flag.set()
             break
         else:
-            foer.say(text=getResponse(pmt.message.strip()), blocking=True)
+            foer.say(text=getResponse(pmt.message.strip(), messages=msgs), blocking=True)
     stopCam(cam)
+
