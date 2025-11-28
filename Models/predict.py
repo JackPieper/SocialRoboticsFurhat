@@ -115,10 +115,19 @@ def predict(segments):
             probs_total += probs
 
     probs_avg = probs_total / len(segments)
-    pred_id = torch.argmax(probs_avg).item()
-    pred_label = idx2class[pred_id]
 
-    return pred_label, probs_avg.tolist()
+    pred_id = torch.argmax(probs_avg).item()
+    final_emotion = idx2class[pred_id]
+
+    results = {
+        idx2class[i]: float(probs_avg[i])
+        for i in range(len(idx2class))
+    }
+
+    return {
+        "final_emotion": final_emotion,
+        "probabilities": results
+    }
 
 def load_audio_with_pyav(video_path):
     container = av.open(video_path)

@@ -88,15 +88,20 @@ def getVid(cam, model):
 def audRes():
     sec = 1
     rate = 16000
-    audio = sd.rec(int(sec * rate),
-                       samplerate=rate,
-                       channels=1,
-                       dtype='float32')
+    audio = sd.rec(
+        int(sec * rate),
+        samplerate=rate,
+        channels=1,
+        dtype='float32'
+    )
+    sd.wait()
+
     if np.max(np.abs(audio)) < 0.05:
         return [0, 0, 0, 0, 0, 0, 0]
-    sd.wait()
-    floatArray = audio.flatten().tolist()
-    emotion = predict(torch.from_numpy(np.array(floatArray, dtype=np.float32)))
+
+    waveform = torch.from_numpy(audio.squeeze().copy()).unsqueeze(0)  # [1, 16000]
+    segments = [waveform]
+    emotion = predict(segments)
     return [emotion["probabilities"]["angry"], emotion["probabilities"]["disgust"], emotion["probabilities"]["fearful"], emotion["probabilities"]["happy"], emotion["probabilities"]["neutral"], emotion["probabilities"]["sad"], emotion["probabilities"]["surprised"]]
 
 def vidRes(cam, model):

@@ -4,7 +4,11 @@ def getResponse(prompt, messages=None, instruct="Give short responses, fit for i
     if instruct is not None:
         messages.append({"role": "system", "content":instruct})
     messages.append({"role": "user", "content": prompt})
-    rep = ollama.chat(model='llama3.2:3b', messages=messages)
+    try:
+        rep = ollama.chat(model='llama3.2:3b', messages=messages)
+    except:
+        print(messages[-3:-1])
+        quit()
     print("You said:", prompt)
     print(rep["message"]["content"])
     return rep["message"]["content"]
