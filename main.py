@@ -1,16 +1,13 @@
-import ollama
 import torch
 from furhat_remote_api import FurhatRemoteAPI
 import cv2
 from datetime import datetime, timedelta
 from keras.models import load_model
 import numpy as np
-from librosa.effects import pitch_shift
 from numpy.ma.core import argmax
 from Models import predict
 import threading
-import json
-from Models.predict import predict, load_ser_model
+from Models.predict import predict
 import sounddevice as sd
 from stories import story1, story2
 from util import getResponse
@@ -20,14 +17,6 @@ ip = ('localhost')
 
 msgs = []
 flag = threading.Event()
-
-with open("Models/class2idx.json", "r") as f:
-    class2idx = json.load(f)
-idx2class = {v: k for k, v in class2idx.items()}
-model_path = "Models/emotion_lstm_best.pth"
-N_MFCC_dim = 122
-num_classes = len(class2idx)
-sModel = load_ser_model(model_path, N_MFCC_dim, num_classes)
 
 def showEmotion(foer, emotion):
     print("EMOTION FOUND:", emotion)
