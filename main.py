@@ -11,28 +11,14 @@ from Models.predict import predict
 import sounddevice as sd
 from stories import story1, story2
 from util import getResponse
+import json
 
 model = 'llama3.2:3b' #nieuwe modellen kijken welke de meest passende antwoorden geven
 ip = ('localhost')
 
 msgs = []
 flag = threading.Event()
-
-def showEmotion(foer, emotion):
-    print("EMOTION FOUND:", emotion)
-    match emotion.lower():
-        case "angry":
-            foer.gesture(name="ExpressAnger", async_req=True)
-        case "happy":
-            foer.gesture(name="BigSmile", async_req=True)
-        case "sad":
-            foer.gesture(name="ExpressSad", async_req=True)
-        case "surprise":
-            foer.gesture(name="Surprise", async_req=True)
-        case "fear":
-            foer.gesture(name="ExpressFear", async_req=True)
-        case "disgust":
-            foer.gesture(name="ExpressDisgust", async_req=True)
+endStory = threading.Event()
 
 def startCam():
     cam = cv2.VideoCapture(0)
@@ -44,6 +30,12 @@ def startCam():
 def stopCam(cam):
     cam.release()
     cv2.destroyAllWindows()
+
+def vidRes(cam, model):
+    if not cam.isOpened():
+        return
+    temp = getVid(cam, model)
+    return temp
 
 def getVid(cam, model):
     cv2.namedWindow("Frame", cv2.WINDOW_NORMAL) #Starts the window early so it shows frames
@@ -104,16 +96,27 @@ def audRes():
     emotion = predict(segments)
     return [emotion["probabilities"]["angry"], emotion["probabilities"]["disgust"], emotion["probabilities"]["fearful"], emotion["probabilities"]["happy"], emotion["probabilities"]["neutral"], emotion["probabilities"]["sad"], emotion["probabilities"]["surprised"]]
 
-def vidRes(cam, model):
-    if not cam.isOpened():
-        return
-    temp = getVid(cam, model)
-    return temp
+def showEmotion(foer, emotion):
+    print("EMOTION FOUND:", emotion)
+    match emotion.lower():
+        case "angry":
+            foer.gesture(name="ExpressAnger", async_req=True)
+        case "happy":
+            foer.gesture(name="BigSmile", async_req=True)
+        case "sad":
+            foer.gesture(name="ExpressSad", async_req=True)
+        case "surprise":
+            foer.gesture(name="Surprise", async_req=True)
+        case "fear":
+            foer.gesture(name="ExpressFear", async_req=True)
+        case "disgust":
+            foer.gesture(name="ExpressDisgust", async_req=True)
 
-def getEmo(cam, foer):
+def getEmo(cam, foer, reflect):
     model = load_model('Models/model_file.h5')
     lastFrames = []
     lastAudio = []
+    emotions = []
     it = 0
     labels_dict = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Neutral', 5: 'Sad', 6: 'Surprise'}
     while not flag.is_set():
@@ -125,7 +128,13 @@ def getEmo(cam, foer):
         lastAudio = format(lastAudio)
         print("a:", labels_dict[np.argmax(lastAudio[0])], "v:", labels_dict[np.argmax(lastFrames[0])])
         resultaat = getAvg(lastAudio, lastFrames)
-        if len(np.where(resultaat == np.max(resultaat))[0]) == 1:
+        emotions.append(labels_dict[argmax(resultaat)])
+        if endStory.is_set():
+            with open("tests.jsonl", "a") as f:
+                f.write(json.dumps(emotions) + "\n")
+            endStory.clear()
+
+        if len(np.where(resultaat == np.max(resultaat))[0]) == 1 and reflect:
             showEmotion(foer, labels_dict[argmax(resultaat)])
 
 def format(var):
@@ -148,21 +157,30 @@ def getAvg(list1, list2):
 if __name__ == "__main__":
     foer = FurhatRemoteAPI(ip)
     foer.set_voice(name='Matthew')
-
-    foer.say(text='Hello, my name is furhat. How are you?', blocking=True)
-    msgs.append({"role":"assistant", "content":"Hello, my name is furhat. How are you?"})
-    com = input("Respond to furhat:\n1: Start story 1\n2: start story 2\nor give a message to continue chatting.\n")
-
     cam = startCam()
-    t = threading.Thread(target=getEmo, args=(cam, foer), daemon=True)
+
+    foer.say(text='Hello, please start a story, or ask me something in your terminal')
+    com = input("Start furhat:\n1: Start story 1 (sad)\n2: start story 2 (happy)\nor give a message to continue chatting.\n")
+
+    foer.say(text='would you like to enable empathy?')
+    emp = ""
+    while emp.strip() != ("y" or "n"):
+        emp = input("Enable empathy? (y/n)\n")
+
+    if emp.strip() == "y":
+        bEmp = True
+    else:
+        bEmp = False
+
+    t = threading.Thread(target=getEmo, args=(cam, foer, bEmp), daemon=True)
     t.start()
     match com:
         case "1":
             story1(foer)
         case "2":
             story2(foer)
+    endStory.set()
 
-    print("voor while")
     while 1:
         pmt = foer.listen()
         print(pmt)
