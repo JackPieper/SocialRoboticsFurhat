@@ -37,7 +37,12 @@ def story1(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
     # 📍 Scene 2: The Disappearance (1:30 - 3:00)
     # Goal: Anxiety and Denial (Brow knitting, faster speech).
@@ -53,7 +58,12 @@ def story1(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
     # 📍 Scene 3: The Clue (3:00 - 4:45)
     # Goal: Dread and Fear (Widened eyes, hesitation).
@@ -71,7 +81,12 @@ def story1(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
 
     # 📍 Scene 4: The Witness (4:45 - 6:30)
@@ -86,7 +101,12 @@ def story1(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
 
     # 📍 Scene 5: The Confrontation (6:30 - 8:00)
@@ -102,7 +122,12 @@ def story1(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
 
     # 📍 Scene 6: The Final Words (8:00 - End)
@@ -116,7 +141,12 @@ def story1(foer, restart=0):
     say.message = ""
     while say.message.strip() == "":
         say = foer.listen()
-    foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+    res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+    if res[-1][-1] == "?" or "Tell me" in res[-1]:
+        say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+    else:
+        say.message = ''.join(s for sublist in res for s in sublist)
+    foer.say(text=say.message, blocking=True)
 
 def story2(foer, restart=0):
     history = []
@@ -127,8 +157,8 @@ def story2(foer, restart=0):
         Use Reflective Listening to repeat their happy details back to them.\
         Keep responses short (under 2 sentences).\
         Maintain a sense of magical realism.\
-        Do not ask any questions, only respond to what is said.\
-        Do not introduce new elements into the conversation. Do not ask anything, or try to induce"})
+        Do not ask any questions.\
+        Do not introduce new elements into the conversation."})
 
     # Furhat Settings:
     #
@@ -143,12 +173,18 @@ def story2(foer, restart=0):
     if restart <= 1:
         foer.say(text=history[-1]["content"], blocking=True)
 
-    history.append({"role": "system", "content": "(Input: User description. Output: Amplify the beauty.) Example: 'Neon pink and bright blue... it’s like swimming inside a painting. It makes you want to smile.'"})
+    history.append({"role": "system", "content": "(Input: User description. Output: Amplify the beauty.) Example: 'Neon pink and bright blue... it’s like swimming inside a painting. It makes you want to smile.' Do not ask questions, or steer the conversation."})
     if restart <= 1:
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        print("Message =", say)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
     # 📍 Scene 2: The Glitch (1:30 - 3:00)
     # Goal: Surprise and Amusement (Eyebrows raised, smiling).
@@ -157,25 +193,36 @@ def story2(foer, restart=0):
     if restart <= 2:
         foer.say(text=history[-1]["content"], blocking=True)
 
+    history.append({"role":"system", "content":"Acknowledge the object and affirm it's beaty or appeal. Example: 'A banjo! seeing a musical instrument like that on the ocean floor makes you wanna dance!' Do not ask questions, or steer the conversation."})
     if restart <= 2:
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        print("Message=============", say)
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        print("Message =", say)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
         history.append({"role":"user", "content":say.message.strip()})
 
     history.append({"role": "assistant", "content":"You move closer to the object. It feels so out of place that you can’t help but laugh. What is the most amusing detail about it? Does it appear intact or recently used? Is there any creature interacting with it?"})
     if restart <= 2:
         foer.say(text=history[-1]["content"], blocking=True)
 
-    history.append({"role": "system", "content": "(Input: The funny detail. Output: React with humor.) Example: 'A crab with a napkin! That is absolutely ridiculous. The ocean has a great sense of humor today.'"})
+    history.append({"role": "system", "content": "(Input: The funny detail. Output: React with humor.) Example: 'A crab with a napkin! That is absolutely ridiculous. The ocean has a great sense of humor today.' Do not ask questions, or steer the conversation."})
     if restart <= 2:
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        print("Message=============", say)
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        print("Message =", say)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
     # 📍 Scene 3: The Encounter (3:00 - 5:00)
     # Goal: Active Joy and Nostalgia.
@@ -189,7 +236,13 @@ def story2(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        print("Message =", say)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
     # 📍 Scene 4: The Interaction (5:00 - 6:30)
     # Goal: Connection and Playfulness.
@@ -203,7 +256,13 @@ def story2(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        print("Message =", say)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
     # 📍 Scene 5: The Treasure (6:30 - 8:00)
     # Goal: Triumph and Excitement (Open mouth smile, relaxed face).
@@ -217,7 +276,13 @@ def story2(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        print("Message =", say)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
     history.append({"role":"assistant", "content":"You hold the treasure up in the water. You did it! Success feels like electricity. I want you to focus on your body. When you feel this kind of pure, silly joy... where do you feel it bubbling up? Is it in your chest? Your face? Your hands?"})
     if restart <= 5:
@@ -228,7 +293,13 @@ def story2(foer, restart=0):
         say.message = ""
         while say.message.strip() == "":
             say = foer.listen()
-        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        print("Message =", say)
+        res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+        if res[-1][-1] == "?" or "Tell me" in res[-1]:
+            say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+        else:
+            say.message = ''.join(s for sublist in res for s in sublist)
+        foer.say(text=say.message, blocking=True)
 
     # 📍 Scene 6: The Ascent (8:00 - End)
     # Goal: Satisfaction and Afterglow.
@@ -240,6 +311,12 @@ def story2(foer, restart=0):
     say.message = ""
     while say.message.strip() == "":
         say = foer.listen()
-    foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+    print("Message =", say)
+    res = getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]).strip().split(". ")
+    if res[-1][-1] == "?" or "Tell me" in res[-1]:
+        say.message = ''.join(s for sublist in res[0:-1] for s in sublist)
+    else:
+        say.message = ''.join(s for sublist in res for s in sublist)
+    foer.say(text=say.message, blocking=True)
 
     foer.say(text="Take a deep breath. Keep that smile on your face. Open your eyes. Welcome back, champion.", blocking=True)
