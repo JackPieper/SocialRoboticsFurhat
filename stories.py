@@ -2,14 +2,16 @@ from util import getResponse
 
 def story1(foer, restart=0):
     history = []
+    say = foer.listen()
     history.append({"role":"system", "content":"You are the narrator of a dark, immersive mystery story about a user losing their cat. Current Context: The user is improvising details about a fictional cat named Bobby. The story is tragic and mysterious. Your Goal: Validate the user's emotional descriptions and deepen the sense of loss and finality. Your Persona: You are Furhat. Your tone is somber, slow, poetic, and deeply empathetic. Rules:\
         Always refer to the cat as Bobby.\
         Never offer solutions, 'bright sides', or mention 'cat heaven'. You must sit in the discomfort and sadness with the user.\
         Use the user's exact words to reflect their pain back to them (Reflective Listening).\
         Keep your responses short (under 2 sentences) to allow silence to do the heavy lifting.\
         If the user describes a tragic detail, treat it with gravity and respect.\
-        You will not say anything that hints to bobby being dead or spoiling anything else in the story.\
-        You will not ask any questions and only respond to what is said."})
+        Do not say anything that hints to bobby being dead or spoiling anything else in the story.\
+        Do not ask questions.\
+        All you say will be in response to what is said"})
 
     """Furhat Settings:
 
@@ -32,8 +34,8 @@ def story1(foer, restart=0):
         print(i)
 
     if restart <= 1:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -48,8 +50,8 @@ def story1(foer, restart=0):
     history.append({"role":"system", "content":"(Input: The excuse. Output: Acknowledge the excuse, but hint that it is false.) Example: 'You tell yourself it's just the garage. But deep down... the silence feels different today.'"})
 
     if restart <= 2:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -66,8 +68,8 @@ def story1(foer, restart=0):
     history.append({"role": "system", "content": "(Input: The object. Output: Validate the horror of the object.) Example: 'His blue collar... snapped and lying in the mud. Seeing it there without him makes your hands tremble.'"})
 
     if restart <= 3:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -81,8 +83,8 @@ def story1(foer, restart=0):
 
     history.append({"role": "system", "content":"(Input: The accident story. Output: Heavy empathy. No fixing it.) Example: 'A speeding car... barely a moment to react. Hearing those words makes the world stop spinning.'"})
     if restart <= 4:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -97,8 +99,8 @@ def story1(foer, restart=0):
 
     history.append({"role": "system", "content":"(Input: Somatic location. Output: Validate the physical sensation.) Example: 'That tightness in your throat... it is the body holding back a scream. It is okay to feel it.'"})
     if restart <= 5:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -111,20 +113,22 @@ def story1(foer, restart=0):
     foer.say(text=history[-1]["content"], blocking=True)
 
     history.append({"role": "system", "content": "(Input: The goodbye. Output: Final validation.) Example: 'He hears you. He was loved deeply. Rest now, Bobby.'"})
-    say = ""
-    while say == "":
+    say.message = ""
+    while say.message.strip() == "":
         say = foer.listen()
     foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
 def story2(foer, restart=0):
     history = []
+    say = foer.listen()
     history.append({"role":"system", "content":"You are the narrator of a whimsical, surreal, and joyful deep-sea diving story. Current Context: The user is improvising details about a magical dive where they meet SpongeBob SquarePants and find a treasure. Your Goal: Amplify the user's sense of wonder, humor, and joy. Your Persona: You are Furhat. Your tone is bright, curious, enthusiastic, and warm. You sound like a bedtime storyteller telling a fun adventure. Rules:\
         Validate the user's creative ideas with enthusiasm.\
         If the user suggests something funny or weird, laugh along with them (verbally, e.g., 'That is hilarious!').\
         Use Reflective Listening to repeat their happy details back to them.\
         Keep responses short (under 2 sentences).\
         Maintain a sense of magical realism.\
-        You will not ask any questions, and only respond to what is said."})
+        Do not ask any questions, only respond to what is said.\
+        Do not introduce new elements into the conversation. Do not ask anything, or try to induce"})
 
     # Furhat Settings:
     #
@@ -141,8 +145,8 @@ def story2(foer, restart=0):
 
     history.append({"role": "system", "content": "(Input: User description. Output: Amplify the beauty.) Example: 'Neon pink and bright blue... it’s like swimming inside a painting. It makes you want to smile.'"})
     if restart <= 1:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -154,10 +158,12 @@ def story2(foer, restart=0):
         foer.say(text=history[-1]["content"], blocking=True)
 
     if restart <= 2:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
-        history.append({"role":"user", "content":say})
+        print("Message=============", say)
+        foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
+        history.append({"role":"user", "content":say.message.strip()})
 
     history.append({"role": "assistant", "content":"You move closer to the object. It feels so out of place that you can’t help but laugh. What is the most amusing detail about it? Does it appear intact or recently used? Is there any creature interacting with it?"})
     if restart <= 2:
@@ -165,9 +171,10 @@ def story2(foer, restart=0):
 
     history.append({"role": "system", "content": "(Input: The funny detail. Output: React with humor.) Example: 'A crab with a napkin! That is absolutely ridiculous. The ocean has a great sense of humor today.'"})
     if restart <= 2:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
+        print("Message=============", say)
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
     # 📍 Scene 3: The Encounter (3:00 - 5:00)
@@ -179,8 +186,8 @@ def story2(foer, restart=0):
 
     history.append({"role": "system", "content": "(Input: The action. Output: Validate the joy.) Example: 'A jig and heart bubbles! His energy is infectious. You can't help but grin back at him.'"})
     if restart <= 3:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -193,8 +200,8 @@ def story2(foer, restart=0):
 
     history.append({"role": "system", "content": "(Input: The gift. Output: Laugh along with the user.) Example: 'A golden spatula! Of course. The perfect tool for a deep-sea adventure. It’s absurdly wonderful.'"})
     if restart <= 4:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -207,8 +214,8 @@ def story2(foer, restart=0):
 
     history.append({"role": "system", "content": "Respond, do not ask a question in return or steer the conversation. Example: 'That bubbling feeling in your chest... let it expand. That is the feeling of pure victory.'"})
     if restart <= 5:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -218,8 +225,8 @@ def story2(foer, restart=0):
 
     history.append({"role": "system", "content": "Respond, do not ask a question in return or steer the conversation. Example: 'That bubbling feeling in your chest... let it expand. That is the feeling of pure victory.'"})
     if restart <= 5:
-        say = ""
-        while say == "":
+        say.message = ""
+        while say.message.strip() == "":
             say = foer.listen()
         foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
@@ -230,8 +237,8 @@ def story2(foer, restart=0):
     foer.say(text=history[-1]["content"], blocking=True)
 
     history.append({"role": "system", "content": "Respond, do not ask questions in return or steer the conversation. Example: 'Exhilarated. Hold onto that feeling.'"})
-    say = ""
-    while say == "":
+    say.message = ""
+    while say.message.strip() == "":
         say = foer.listen()
     foer.say(text=getResponse(say.message.strip(), messages=history, instruct=history[0]["content"]), blocking=True)
 
